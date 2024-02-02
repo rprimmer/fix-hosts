@@ -71,165 +71,165 @@ validateDNSname() {
 }
 
 processArguments() {
-	while getopts ":fha:" opt; do
-  		case $opt in
-		h)  usage ;; 
-		f)  DNS_FLUSH=TRUE ;;
-		a)  DNS_NAME="$OPTARG"
-			# echo "DNS name set to: $DNS_NAME" 
-			ADD_DNS=TRUE ;;
-		\?) echo "Invalid option: -$OPTARG" >&2
-			usage ;;
-		:)  echo "Option -$OPTARG requires an argument." >&2
-			usage ;;
-  		esac
-	done
-	
-	# Shift positional arguments to exclude already processed options
-	shift $((OPTIND-1))
+    while getopts ":fha:" opt; do
+        case $opt in
+        h)  usage ;; 
+        f)  DNS_FLUSH=TRUE ;;
+        a)  DNS_NAME="$OPTARG"
+            # echo "DNS name set to: $DNS_NAME" 
+            ADD_DNS=TRUE ;;
+        \?) echo "Invalid option: -$OPTARG" >&2
+            usage ;;
+        :)  echo "Option -$OPTARG requires an argument." >&2
+            usage ;;
+        esac
+    done
+    
+    # Shift positional arguments to exclude already processed options
+    shift $((OPTIND-1))
 
     # Note: when adding a DNS entry or flushing the cache, 
-	# there are no additional positional arguments available or required. 
-	if [[ $# -lt 1 && $ADD_DNS != "TRUE" && $DNS_FLUSH != "TRUE" ]]; then
-  		echo "error: no argument provided" >&2
-		usage
-	fi 
+    # there are no additional positional arguments available or required. 
+    if [[ $# -lt 1 && $ADD_DNS != "TRUE" && $DNS_FLUSH != "TRUE" ]]; then
+        echo "error: no argument provided" >&2
+        usage
+    fi 
 
-	if [[ $1 = "prep" || $1 = "restore" ]]; then
-		ACTION=$1
-	elif [[ $ADD_DNS != "TRUE" &&  $DNS_FLUSH != "TRUE" ]]; then
-		echo "error: invalid argument." >&2
-		usage
-	fi 
+    if [[ $1 = "prep" || $1 = "restore" ]]; then
+        ACTION=$1
+    elif [[ $ADD_DNS != "TRUE" &&  $DNS_FLUSH != "TRUE" ]]; then
+        echo "error: invalid argument." >&2
+        usage
+    fi 
 }
 
 # Copy existing HOSTS file before executing hblock
 copyHostsFile() {
-	# echo "In function: copyHostsFile"
-	pushd /etc > /dev/null 
+    # echo "In function: copyHostsFile"
+    pushd /etc > /dev/null 
 
-	if [[ ! -f hosts ]]; then 
-		handleError "error: no hosts file found" 
-	fi 
-	echo "Existing hosts files" ; echo 
-	ls -las hosts*
+    if [[ ! -f hosts ]]; then 
+        handleError "error: no hosts file found" 
+    fi 
+    echo "Existing hosts files" ; echo 
+    ls -las hosts*
 
-	# If files hosts-ORIG already exists, this will be destuctive
-	if [[ -f hosts-ORIG ]]; then
-		echo; echo "WARNING: File hosts-ORIG already exists. This action will overwrite that file"; echo
-		if ! booleanQuery "Do you want to continue? (y/n)"; then
-  			echo "Exiting..."
-  			exit 0
-		fi
-	fi 
+    # If files hosts-ORIG already exists, this will be destuctive
+    if [[ -f hosts-ORIG ]]; then
+        echo; echo "WARNING: File hosts-ORIG already exists. This action will overwrite that file"; echo
+        if ! booleanQuery "Do you want to continue? (y/n)"; then
+            echo "Exiting..."
+            exit 0
+        fi
+    fi 
 
-	sudo cp hosts{,-ORIG}
+    sudo cp hosts{,-ORIG}
 
-	echo "Running hblock to update hosts file"
-	hblock
-	local hblock_exit_status=$?
-	if [[ $hblock_exit_status -ne 0 ]]; then
-   		 handleError "hblock execution failed with exit status $hblock_exit_status"
-	fi 
+    echo "Running hblock to update hosts file"
+    hblock
+    local hblock_exit_status=$?
+    if [[ $hblock_exit_status -ne 0 ]]; then
+         handleError "hblock execution failed with exit status $hblock_exit_status"
+    fi 
 
-	echo ; echo "Hosts file updated. New host files"
-	ls -las hosts*
-	popd > /dev/null 
+    echo ; echo "Hosts file updated. New host files"
+    ls -las hosts*
+    popd > /dev/null 
 }
 
 # Restore HOSTS to original file
 restoreHostsFile() {
-	# echo "In function: restoreHostsFile"	
-	pushd /etc > /dev/null 
+    # echo "In function: restoreHostsFile"  
+    pushd /etc > /dev/null 
 
-	if [[ ! -f hosts-ORIG ]]; then 
-		handleError "error: no original hosts file (hosts-ORIG) found" 
-	fi 
-	echo "Existing hosts files" ; echo 
-	ls -las hosts*
+    if [[ ! -f hosts-ORIG ]]; then 
+        handleError "error: no original hosts file (hosts-ORIG) found" 
+    fi 
+    echo "Existing hosts files" ; echo 
+    ls -las hosts*
 
-	# If files hosts already exists, this will be destuctive
-	if [[ -f hosts ]]; then
-		echo; echo "WARNING: File hosts already exists. This action will overwrite that file"; echo
-		if ! booleanQuery "Do you want to continue? (y/n)"; then
-  			echo "Exiting..."
-  			exit 0
-		fi
-	fi 
+    # If files hosts already exists, this will be destuctive
+    if [[ -f hosts ]]; then
+        echo; echo "WARNING: File hosts already exists. This action will overwrite that file"; echo
+        if ! booleanQuery "Do you want to continue? (y/n)"; then
+            echo "Exiting..."
+            exit 0
+        fi
+    fi 
 
-	sudo cp hosts{-ORIG,}
+    sudo cp hosts{-ORIG,}
 
-	echo "Hosts file updated."
-	echo "New host files" ; echo 
-	ls -las hosts*
-	popd > /dev/null 
+    echo "Hosts file updated."
+    echo "New host files" ; echo 
+    ls -las hosts*
+    popd > /dev/null 
 }
 
 # Add a DNS entry to allow list and remove this entry from the hosts file
 addDNSname() {
-	# echo "In fucntion: addDNSname"
+    # echo "In fucntion: addDNSname"
 
-	echo "Adding $DNS_NAME to $ALLOW_LIST"
+    echo "Adding $DNS_NAME to $ALLOW_LIST"
 
-	# Verify we have a valid DNS name
+    # Verify we have a valid DNS name
     if ! validateDNSname "$DNS_NAME"; then
         handleError "Invalid DNS name format: $DNS_NAME"
     fi
 
-	pushd /etc/hblock > /dev/null 
+    pushd /etc/hblock > /dev/null 
 
-	# Check to see if DNS entry already exists in allow.list
-	if grep -qFx "$DNS_NAME" "$ALLOW_LIST" ; then
-		echo "DNS entry "$DNS_NAME" already exists in $ALLOW_LIST"
-	else	
-		echo "$DNS_NAME" >> $ALLOW_LIST 
-	fi 
+    # Check to see if DNS entry already exists in allow.list
+    if grep -qFx "$DNS_NAME" "$ALLOW_LIST" ; then
+        echo "DNS entry "$DNS_NAME" already exists in $ALLOW_LIST"
+    else    
+        echo "$DNS_NAME" >> $ALLOW_LIST 
+    fi 
 
-	echo "Contents of $ALLOW_LIST"
-	cat $ALLOW_LIST
+    echo "Contents of $ALLOW_LIST"
+    cat $ALLOW_LIST
 
-	# Now remove this entry from /etc/hosts
-	echo "Removing $DNS_NAME from /etc/hosts"
-	cd ..
-	sed -i.bak "/$DNS_NAME/d" hosts
-	local sed_exit_status=$?
-	if [[ $sed_exit_status -ne 0 ]]; then
-   		handleError "sed execution failed with exit status $sed_exit_status"
-	fi 
+    # Now remove this entry from /etc/hosts
+    echo "Removing $DNS_NAME from /etc/hosts"
+    cd ..
+    sed -i.bak "/$DNS_NAME/d" hosts
+    local sed_exit_status=$?
+    if [[ $sed_exit_status -ne 0 ]]; then
+        handleError "sed execution failed with exit status $sed_exit_status"
+    fi 
 
-	# Verify entry was removed
-	if grep -Fqx "$DNS_NAME" hosts; then
-	    echo "error: $DNS_NAME is still present in /etc/hosts."
-	fi
+    # Verify entry was removed
+    if grep -Fqx "$DNS_NAME" hosts; then
+        echo "error: $DNS_NAME is still present in /etc/hosts."
+    fi
 
-	popd > /dev/null 
+    popd > /dev/null 
 }
 
 # Flush DNS cache and restart mDNSResponder
 flushDNScache() {
-	# echo "In function: flushDNScache"
-	echo "Flushing DNS cache…"
-	sudo dscacheutil -flushcache
-	sleep 4
-	
-	echo "Restarting the mDNSResponder service…"
-	sudo killall -HUP mDNSResponder
-	sleep 4
+    # echo "In function: flushDNScache"
+    echo "Flushing DNS cache…"
+    sudo dscacheutil -flushcache
+    sleep 4
+    
+    echo "Restarting the mDNSResponder service…"
+    sudo killall -HUP mDNSResponder
+    sleep 4
 
-	if ! pgrep mDNSResponder > /dev/null; then
-    	echo "Warning: the mDNSResponder process is not running." >&2
-	else
-    	echo "The mDNSResponder process is running with PID(s): $(pgrep mDNSResponder | xargs)"
-	fi
+    if ! pgrep mDNSResponder > /dev/null; then
+        echo "Warning: the mDNSResponder process is not running." >&2
+    else
+        echo "The mDNSResponder process is running with PID(s): $(pgrep mDNSResponder | xargs)"
+    fi
 
-	ps aux | grep mDNSResponder | grep -v grep
+    ps aux | grep mDNSResponder | grep -v grep
 }
 
 main() {
-	# Verify hblock(1) is loaded on this system
-	if ! command -v hblock >/dev/null 2>&1; then
-	    handleError "error: hblock(1) does not exist on this system."
-	fi
+    # Verify hblock(1) is loaded on this system
+    if ! command -v hblock >/dev/null 2>&1; then
+        handleError "error: hblock(1) does not exist on this system."
+    fi
 
     processArguments "$@"
 
