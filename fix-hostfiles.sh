@@ -1,20 +1,14 @@
 #!/usr/bin/env bash
-
-# hblock(1) is a shell script available on homebrew that blocks ads, beacons and malware sites. 
-# It does this by editing /etc/hosts and setting the IP address for such sites to 0.0.0.0
-# The issue is that hblock sometimes adds sites to /etc/hots that are needed.
-# This script fixes such issues by adding good DNS hosts to the exclustion list /etc/hblock/allow.list
-# and removing the entry from /etc/hosts. It will also optionally flush the DNS cache and restart the daemon.
-# Cf. fix-hostfile manpage and design spec for detail. 
+# Cf. fix-hostfiles.1 manpage for detail. 
 
 # Globals
 DNS_FLUSH=FALSE
 ADD_DNS=FALSE 
 ACTION=NULL
-ALLOW_LIST=allow.list
 
 usage() {
-    echo "Usage: $(basename "$0") [OPTIONS] <ACTION>"
+    local program=$(basename "$0")
+    echo "Usage: $program [OPTIONS] <ACTION>"
     echo
     echo "Options:"
     echo "  -h             Display this help message and exit."
@@ -25,15 +19,25 @@ usage() {
     echo "  prep           Backup hosts file and run hblock to create a new hosts file."
     echo "  restore        Reinstate original hosts file."
     echo
-    echo "Example:"
-    echo "  $(basename "$0") --add example.com prep"
+    echo "Examples:"
+    echo "  $program prep"
+    echo "  $program restore"
+    echo "  $program -a example.domain.com"
+    echo "  $program -f" 
     echo
-    echo "Note: When adding a DNS entry or flushing the cache, no additional positional arguments are required."
+    echo "Restrictions:"
+    echo "  This script requires privileged actions. User must know sudo(1) password." 
+    echo
+    echo "  The flush action is specific to macOS only."
+    echo
+    echo "Notes:" 
+    echo "  When adding a DNS entry (-a) or flushing the cache (-f), the arguments <prep | restore> are not required."
+    echo 
     exit 1
 }
 
 handleError() {
-    echo "Error: $1" >&2
+    echo "Error: "$1"" >&2
     exit 1
 }
 
@@ -109,7 +113,7 @@ copyHostsFile() {
     pushd /etc > /dev/null 
 
     if [[ ! -f hosts ]]; then 
-        handleError "error: no hosts file found" 
+        handleError "no hosts file found" 
     fi 
     echo "Existing hosts files" ; echo 
     ls -las hosts*
@@ -143,14 +147,14 @@ restoreHostsFile() {
     pushd /etc > /dev/null 
 
     if [[ ! -f hosts-ORIG ]]; then 
-        handleError "error: no original hosts file (hosts-ORIG) found" 
+        handleError "no original hosts file (hosts-ORIG) found" 
     fi 
     echo "Existing hosts files" ; echo 
     ls -las hosts*
 
-    # If files hosts already exists, this will be destuctive
+    # If  hosts already exists, this will be destuctive
     if [[ -f hosts ]]; then
-        echo; echo "WARNING: File hosts already exists. This action will overwrite that file"; echo
+        echo; echo "WARNING: File /etc/hosts already exists. This action will overwrite that file"; echo
         if ! booleanQuery "Do you want to continue? (y/n)"; then
             echo "Exiting..."
             exit 0
@@ -168,30 +172,41 @@ restoreHostsFile() {
 # Add a DNS entry to allow list and remove this entry from the hosts file
 addDNSname() {
     # echo "In fucntion: addDNSname"
+    local allow=allow.list
+    local hblock_dir=/etc/hblock
 
-    echo "Adding $DNS_NAME to $ALLOW_LIST"
+    echo "Adding $DNS_NAME to $allow"
 
     # Verify we have a valid DNS name
     if ! validateDNSname "$DNS_NAME"; then
-        handleError "Invalid DNS name format: $DNS_NAME"
+        handleError "invalid DNS name format: $DNS_NAME"
     fi
 
-    pushd /etc/hblock > /dev/null 
-
-    # Check to see if DNS entry already exists in allow.list
-    if grep -qFx "$DNS_NAME" "$ALLOW_LIST" ; then
-        echo "DNS entry "$DNS_NAME" already exists in $ALLOW_LIST"
-    else    
-        echo "$DNS_NAME" >> $ALLOW_LIST 
+    # On first run, will need to create hblock directory 
+    if [[ ! -d "$hblock_dir" ]]; then
+        sudo mkdir -p $hblock_dir
+        local sudo_exit_status=$?
+        if [[ $sudo_exit_status -ne 0 ]]; then
+            handleError "sudo(1) failed with exit status $sudo_exit_status"
+        fi 
     fi 
 
-    echo "Contents of $ALLOW_LIST"
-    cat $ALLOW_LIST
+    pushd $hblock_dir > /dev/null 
+
+    # Check to see if DNS entry already exists in allow.list
+    if grep -qFx "$DNS_NAME" "$allow" ; then
+        echo "DNS entry "$DNS_NAME" already exists in $allow"
+    else    
+        echo "$DNS_NAME" >> $allow 
+    fi 
+
+    echo "Contents of $allow"
+    cat $allow
 
     # Now remove this entry from /etc/hosts
     echo "Removing $DNS_NAME from /etc/hosts"
     cd ..
-    sed -i.bak "/$DNS_NAME/d" hosts
+    sudo sed -i.bak "/$DNS_NAME/d" hosts
     local sed_exit_status=$?
     if [[ $sed_exit_status -ne 0 ]]; then
         handleError "sed execution failed with exit status $sed_exit_status"
@@ -208,6 +223,10 @@ addDNSname() {
 # Flush DNS cache and restart mDNSResponder
 flushDNScache() {
     # echo "In function: flushDNScache"
+    if [[ "$(uname)" != "Darwin" ]]; then
+        handleError "flush action is specific to macOS"
+    fi 
+
     echo "Flushing DNS cache…"
     sudo dscacheutil -flushcache
     sleep 4
@@ -227,8 +246,8 @@ flushDNScache() {
 
 main() {
     # Verify hblock(1) is loaded on this system
-    if ! command -v hblock >/dev/null 2>&1; then
-        handleError "error: hblock(1) does not exist on this system."
+    if ! command -v hblock > /dev/null 2>&1; then
+        handleError "hblock(1) does not exist on this path."
     fi
 
     processArguments "$@"
@@ -246,10 +265,10 @@ main() {
             elif [[ $DNS_FLUSH = "TRUE" ]]; then
                 flushDNScache
             else
-                handleError "error: No valid action specified"
+                handleError "no valid action specified"
             fi
             ;;
     esac
 }
 
-main "$@"
+main "$@" 

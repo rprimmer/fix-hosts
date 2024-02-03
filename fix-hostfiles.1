@@ -1,0 +1,66 @@
+.TH fix-hostfiles.sh 1
+.SH NAME
+fix-hostfiles.sh \- Prepare /etc/hosts for hblock(1) 
+.SH USAGE
+.B fix-hostfiles.sh [OPTIONS] <ACTION>
+.SH DESCRIPTION
+hblock(1) is a shell script (available on homebrew) that blocks ads, beacons and malware sites. 
+It does this by editing /etc/hosts and setting the IP address for such sites to 0.0.0.0.
+The issue is that hblock sometimes adds sites to /etc/hosts that are needed.
+This script fixes such issues by adding good DNS hosts to the exclusion list (/etc/hblock/allow.list)
+and removing the corresponding entry from /etc/hosts. It will also optionally flush the DNS cache 
+and restart the mDNSResponder daemon.
+.SH OPTIONS
+.TP
+.TP
+\fB\- h\fR
+.br 
+Displays command help
+.TP
+\fB\- f\fR
+.br 
+Flush DNS cache and restart mDNSResponder daemon
+.TP
+\fB\- a <DNS name>\fR
+Add a DNS entry to allow list and remove from /etc/hosts
+.SH ARGUMENTS
+.TP
+.TP 
+\fBprep\fR
+.br 
+Backup hosts file and run hblock to create a new hosts file 
+.TP
+\fBrestore\fR
+.br 
+Reinstate original hosts file
+.SH RESTRICTIONS
+.TP
+The <flush> action is for macOS only. 
+.TP
+This script requires privileged actions. User must know sudo(1) password. 
+.SH NOTES
+.TP
+When adding a DNS entry (-a) or flushing the cache (-f), the arguments <prep | restore> are not required.
+.SH EXAMPLES
+.TP
+fix-hostfiles.sh prep 
+.TP
+fix-hostfiles.sh restore
+.TP
+fix-hostfiles.sh -a example.domain.com
+.TP
+fix-hostfiles.sh -f 
+.SH FILE LOCATIONS 
+.TP
+/usr/local/bin/fix-hostfiles.sh
+Bash script 
+.TP
+/etc/hosts
+System hosts file
+.TP
+/etc/hblock/allow.list
+Used by hblock(1) to indicate DNS names to explicitly allow
+. .SH AUTHOR
+. .nf
+. Robert Primmer <rob.primmer@icloud.com>
+. .fi
