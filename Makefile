@@ -1,8 +1,11 @@
 
 MANPAGE = fix-hostfiles.1
 PROG    = fix-hostfiles.sh
-BINDIR  = /usr/local/bin
-MANDIR	= /usr/local/share/man/man1
+# homebrew has different paths on Intel and ARM macs
+# BINDIR  = /usr/local/bin
+# MANDIR	= /usr/local/share/man/man1
+BINDIR  = /opt/homebrew/bin
+MANDIR  = /opt/homebrew/share/man/man
 
 prog: $(PROG)
 	cp $(PROG) $(BINDIR)
