@@ -17,3 +17,12 @@ Required for log in to work.
 * unitedairlinesonline.live
 * analytics.vacations.united.com
 * ualaki-analytics.vacations.united.com
+
+### Lufthansa Airlines
+
+Required for log-in to work
+
+* lufthansa01.webtrekk.net
+* se.monetate.net
+* milesandmore.tt.omtrdc.net
+* sb.monetate.

@@ -4,4 +4,6 @@ attic/example.man
 attic/pop-test.sh
 attic/Makefile
 .DS_Store
-README hblock Allow List.md
+attic/pkgutil.1
+attic/test
+attic/LAST-GOOD-fix-hostfiles.sh

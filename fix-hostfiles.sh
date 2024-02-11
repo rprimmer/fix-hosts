@@ -107,7 +107,7 @@ processArguments() {
     fi 
 }
 
-# Copy existing HOSTS file before executing hblock
+# Copy existing HOSTS file before executing hblock [prep]
 copyHostsFile() {
     # echo "In function: copyHostsFile"
     pushd /etc > /dev/null 
@@ -141,7 +141,7 @@ copyHostsFile() {
     popd > /dev/null 
 }
 
-# Restore HOSTS to original file
+# Restore HOSTS to original file [restore]
 restoreHostsFile() {
     # echo "In function: restoreHostsFile"  
     pushd /etc > /dev/null 
