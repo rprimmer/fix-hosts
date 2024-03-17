@@ -10,6 +10,8 @@ MANDIR  = /opt/homebrew/share/man/man
 prog: $(PROG)
 	cp $(PROG) $(BINDIR)
 	chmod 755 $(BINDIR)/$(PROG)
+	pandoc README.md -o readme.pdf
+	pandoc Bash-Design-Spec.md -o bash-design-spec.pdf
 
 man: $(MANPAGE)
 	cp $(MANPAGE) $(MANDIR)

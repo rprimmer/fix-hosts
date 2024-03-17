@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Cf. fix-hostfiles.1 manpage for detail. 
+# Cf. fix-hostfiles-sh.1 manpage for detail. 
 
 # Globals
 DNS_FLUSH=FALSE
@@ -92,7 +92,7 @@ processArguments() {
     # Shift positional arguments to exclude already processed options
     shift $((OPTIND-1))
 
-    # Note: when adding a DNS entry or flushing the cache, 
+    # When flushing the cache, 
     # there are no additional positional arguments available or required. 
     if [[ $# -lt 1 && $ADD_DNS != "TRUE" && $DNS_FLUSH != "TRUE" ]]; then
         echo "error: no argument provided" >&2
